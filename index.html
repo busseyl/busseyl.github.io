@@ -7,21 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 </head>
 <body><div id="app"></div></body>
-<script type="text/x-template" id="main"> 
-  <v-app>
-    <v-main>
-      <v-container>Team of Monkeys Consulting</v-container>
-    </v-main>
-  </v-app>
-</script>
+<script src="js/templates/main.js" type="text/x-template" id="main"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
-<script>
-  var vm = new Vue({
-    el: '#app',
-    template: '#main',
-    vuetify: new Vuetify(),
-  })
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>
