@@ -1,7 +1,6 @@
 /**
  * Appwrite
  */
-import { Client } from 'https://cdn.jsdelivr.net/npm/appwrite@16.0.0'
 const client = new Client()
 client
     .setEndpoint('https://cloud.appwrite.io/v1')
