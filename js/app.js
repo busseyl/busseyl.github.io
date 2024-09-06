@@ -1,6 +1,7 @@
 /**
  * Appwrite
  */
+const { Client } = Appwrite
 const client = new Client()
 client
     .setEndpoint('https://cloud.appwrite.io/v1')
