@@ -1,24 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link href="//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
-  <link href="//cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
-  <link href="//cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <style>
+    .markdown-body {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      display: block;
+      overflow-x: auto;
+    }
+
+    .markdown-body th,
+    .markdown-body td {
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      padding: 0.75rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .markdown-body th {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .markdown-body blockquote {
+      margin: 1rem 0;
+      padding-left: 1rem;
+      border-left: 4px solid rgba(0, 0, 0, 0.12);
+      color: rgba(0, 0, 0, 0.7);
+    }
+  </style>
 </head>
 <body><div id="app"></div>
-<script src="//cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
-<script src="//cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
-<script src="//cdn.jsdelivr.net/npm/appwrite@16.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 <script type="text/x-template" id="main">
   <v-app>
+    <v-app-bar app color="white" flat>
+      <v-toolbar-title>busseyl.github.io</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn
+        text
+        href="ref/STARRED_REPOS.md"
+        rel="noopener"
+        target="_blank"
+      >
+        View markdown source
+      </v-btn>
+    </v-app-bar>
     <v-main>
-      <v-container fluid>
-        busseyl.github.io
-        <hr/>
-        {{ client }}
-        <hr/>
-        {{ account }}
+      <v-container class="py-8">
+        <v-row justify="center">
+          <v-col cols="12" lg="10" xl="9">
+            <v-card outlined>
+              <v-card-text class="pa-6 pa-md-8">
+                <div v-if="isLoading" class="text-h6">Loading starred repositories…</div>
+                <v-alert
+                  v-else-if="error"
+                  border="left"
+                  colored-border
+                  prominent
+                  type="error"
+                >
+                  {{ error }}
+                </v-alert>
+                <div
+                  v-else
+                  class="markdown-body"
+                  v-html="renderedMarkdown"
+                ></div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
     </v-main>
   </v-app>

@@ -1,24 +1,48 @@
-/**
- * Appwrite
- */
-const { Client, Account } = Appwrite
-const client = new Client()
-client
-    .setEndpoint('https://cloud.appwrite.io/v1')
-    .setProject('66db23330023a284ff78')
-const account = new Account(client)
+const markdownPath = 'ref/STARRED_REPOS.md'
+const converter = new showdown.Converter({
+  tables: true,
+  ghCompatibleHeaderId: true,
+  openLinksInNewWindow: true,
+  simplifiedAutoLink: true,
+  strikethrough: true,
+  tasklists: true,
+})
 
-/**
- * Main application
- */
-var vm = new Vue({
+new Vue({
   el: '#app',
   template: '#main',
   vuetify: new Vuetify(),
   data () {
     return {
-      client,
-      account,
+      error: '',
+      isLoading: true,
+      renderedMarkdown: '',
     }
-  }
+  },
+  methods: {
+    async loadMarkdown () {
+      try {
+        const response = await fetch(markdownPath, {
+          cache: 'no-store',
+          headers: {
+            Accept: 'text/markdown, text/plain;q=0.9, */*;q=0.8',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Unable to load ${markdownPath} (${response.status})`)
+        }
+
+        const markdown = await response.text()
+        this.renderedMarkdown = converter.makeHtml(markdown)
+      } catch (error) {
+        this.error = error.message
+      } finally {
+        this.isLoading = false
+      }
+    },
+  },
+  mounted () {
+    this.loadMarkdown()
+  },
 })
