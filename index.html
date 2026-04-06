@@ -2,84 +2,249 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <title>busseyl starred repos</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
   <style>
-    .markdown-body {
-      font-size: 16px;
-      line-height: 1.6;
+    .repo-name a {
+      font-weight: 500;
+      text-decoration: none;
+      color: inherit;
     }
-
-    .markdown-body table {
-      width: 100%;
-      border-collapse: collapse;
-      display: block;
-      overflow-x: auto;
+    .repo-name a:hover {
+      text-decoration: underline;
     }
-
-    .markdown-body th,
-    .markdown-body td {
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      padding: 0.75rem;
-      text-align: left;
+    .topic-chip {
+      cursor: pointer;
+    }
+    .filter-panel .v-chip {
+      font-size: 0.7rem;
+    }
+    .repo-table th {
+      white-space: nowrap;
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+    }
+    .repo-table td {
+      font-size: 0.82rem;
       vertical-align: top;
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
     }
-
-    .markdown-body th {
-      background: rgba(0, 0, 0, 0.04);
+    .repo-description {
+      max-width: 340px;
+      color: rgba(0,0,0,.7);
+      line-height: 1.4;
     }
-
-    .markdown-body blockquote {
-      margin: 1rem 0;
-      padding-left: 1rem;
-      border-left: 4px solid rgba(0, 0, 0, 0.12);
-      color: rgba(0, 0, 0, 0.7);
+    .num-col {
+      white-space: nowrap;
+    }
+    .category-header {
+      font-size: 1rem !important;
+      font-weight: 600 !important;
+    }
+    .results-bar {
+      font-size: 0.82rem;
+      color: rgba(0,0,0,.54);
     }
   </style>
 </head>
-<body><div id="app"></div>
+<body>
+<div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
 <script type="text/x-template" id="main">
   <v-app>
-    <v-app-bar app color="white" flat>
-      <v-toolbar-title>busseyl.github.io</v-toolbar-title>
+    <!-- ── App bar ─────────────────────────────────────── -->
+    <v-app-bar app color="white" flat elevate-on-scroll>
+      <v-toolbar-title class="font-weight-light">busseyl.github.io</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn
-        text
-        href="ref/STARRED_REPOS.md"
-        rel="noopener"
-        target="_blank"
-      >
-        View markdown source
+
+      <!-- Search box -->
+      <v-text-field
+        v-if="!isLoading && !error"
+        v-model="searchQuery"
+        placeholder="Search repos…"
+        prepend-inner-icon="mdi-magnify"
+        outlined
+        dense
+        hide-details
+        clearable
+        class="mr-3"
+        style="max-width:280px"
+      ></v-text-field>
+
+      <v-btn text small href="ref/STARRED_REPOS.md" rel="noopener" target="_blank">
+        <v-icon small left>mdi-file-document-outline</v-icon>
+        Markdown
       </v-btn>
     </v-app-bar>
+
+    <!-- ── Main ───────────────────────────────────────── -->
     <v-main>
-      <v-container fluid class="py-8">
-        <v-row justify="center">
+      <v-container fluid class="py-6">
+
+        <!-- Loading -->
+        <v-row v-if="isLoading" justify="center">
+          <v-col cols="12" lg="10" xl="9" class="text-center py-12">
+            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+            <div class="mt-4 text-body-1 grey--text">Loading starred repositories…</div>
+          </v-col>
+        </v-row>
+
+        <!-- Error -->
+        <v-row v-else-if="error" justify="center">
           <v-col cols="12" lg="10" xl="9">
-            <v-card outlined>
-              <v-card-text class="pa-6 pa-md-8">
-                <div v-if="isLoading" class="text-h6">Loading starred repositories…</div>
-                <v-alert
-                  v-else-if="error"
-                  border="left"
-                  colored-border
-                  prominent
-                  type="error"
+            <v-alert border="left" colored-border prominent type="error">{{ error }}</v-alert>
+          </v-col>
+        </v-row>
+
+        <!-- Content -->
+        <v-row v-else justify="center">
+          <v-col cols="12" lg="10" xl="9">
+
+            <!-- ── Filter panel ───────────────────────── -->
+            <v-card outlined class="mb-4 filter-panel">
+              <v-card-title class="py-3 px-4 d-flex align-center">
+                <v-icon small class="mr-2">mdi-filter-variant</v-icon>
+                <span class="text-body-1 font-weight-medium">Filter by topic</span>
+                <v-chip x-small class="ml-2" v-if="selectedTopics.length" color="primary" text-color="white">
+                  {{ selectedTopics.length }} selected
+                </v-chip>
+                <v-spacer></v-spacer>
+                <v-btn
+                  v-if="selectedTopics.length"
+                  x-small text color="grey darken-1"
+                  @click="clearTopics"
                 >
-                  {{ error }}
-                </v-alert>
-                <div
-                  v-else
-                  class="markdown-body"
-                  v-html="renderedMarkdown"
-                ></div>
-              </v-card-text>
+                  Clear all
+                </v-btn>
+                <v-btn
+                  x-small text color="grey darken-1"
+                  class="ml-1"
+                  @click="filterExpanded = !filterExpanded"
+                >
+                  <v-icon small>{{ filterExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </v-btn>
+              </v-card-title>
+
+              <v-expand-transition>
+                <v-card-text v-show="filterExpanded" class="pt-0 pb-3 px-4">
+                  <div class="d-flex flex-wrap">
+                    <v-chip
+                      v-for="topic in sortedTopics"
+                      :key="topic.name"
+                      x-small
+                      class="topic-chip mr-1 mb-1"
+                      :color="isSelected(topic.name) ? 'primary' : undefined"
+                      :text-color="isSelected(topic.name) ? 'white' : undefined"
+                      :outlined="!isSelected(topic.name)"
+                      @click="toggleTopic(topic.name)"
+                    >
+                      {{ topic.name }}
+                      <span class="ml-1 grey--text text--darken-1">({{ topic.count }})</span>
+                    </v-chip>
+                  </div>
+                </v-card-text>
+              </v-expand-transition>
             </v-card>
+
+            <!-- ── Results bar ────────────────────────── -->
+            <div class="results-bar mb-3 px-1 d-flex align-center flex-wrap">
+              <span>
+                Showing <strong>{{ totalFiltered }}</strong> of {{ totalRepos }} repositories
+              </span>
+              <span v-if="selectedTopics.length" class="ml-2">
+                · filtered by:
+                <v-chip
+                  v-for="t in selectedTopics"
+                  :key="t"
+                  x-small close
+                  color="primary" text-color="white"
+                  class="ml-1"
+                  @click:close="toggleTopic(t)"
+                >{{ t }}</v-chip>
+              </span>
+              <span v-if="searchQuery" class="ml-2">
+                · search: <em>"{{ searchQuery }}"</em>
+              </span>
+            </div>
+
+            <!-- ── Category sections ──────────────────── -->
+            <v-card
+              v-for="cat in filteredCategories"
+              :key="cat.name"
+              outlined
+              class="mb-4"
+            >
+              <v-card-title class="py-3 px-4 category-header">
+                {{ cat.name }}
+                <v-chip x-small class="ml-2">{{ cat.repos.length }}</v-chip>
+              </v-card-title>
+
+              <v-divider></v-divider>
+
+              <v-simple-table class="repo-table" dense>
+                <template v-slot:default>
+                  <thead>
+                    <tr>
+                      <th>Repository</th>
+                      <th>Description</th>
+                      <th>Language</th>
+                      <th class="text-right">Stars</th>
+                      <th class="text-right">Forks</th>
+                      <th>Updated</th>
+                      <th>Topics</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="repo in cat.repos" :key="repo.full_name">
+                      <td class="repo-name">
+                        <a :href="repo.html_url" target="_blank" rel="noopener noreferrer">
+                          {{ repo.full_name }}
+                        </a>
+                      </td>
+                      <td>
+                        <div class="repo-description">{{ repo.description || '' }}</div>
+                      </td>
+                      <td>
+                        <v-chip x-small label v-if="repo.language" outlined>{{ repo.language }}</v-chip>
+                      </td>
+                      <td class="text-right num-col">{{ formatNum(repo.stars) }}</td>
+                      <td class="text-right num-col">{{ formatNum(repo.forks) }}</td>
+                      <td class="num-col">{{ repo.updated_at }}</td>
+                      <td>
+                        <v-chip
+                          v-for="topic in repo.topics"
+                          :key="topic"
+                          x-small
+                          class="topic-chip mr-1 mb-1"
+                          :color="isSelected(topic) ? 'primary' : undefined"
+                          :text-color="isSelected(topic) ? 'white' : undefined"
+                          :outlined="!isSelected(topic)"
+                          @click="toggleTopic(topic)"
+                        >{{ topic }}</v-chip>
+                      </td>
+                    </tr>
+                  </tbody>
+                </template>
+              </v-simple-table>
+            </v-card>
+
+            <!-- No results -->
+            <v-card v-if="filteredCategories.length === 0" outlined class="pa-8 text-center">
+              <v-icon large class="mb-3 grey--text">mdi-magnify-remove-outline</v-icon>
+              <div class="text-h6 grey--text">No repositories match your filters.</div>
+              <v-btn text color="primary" class="mt-3" @click="clearAll">Clear filters</v-btn>
+            </v-card>
+
+            <!-- Footer -->
+            <div class="text-caption grey--text text-center mt-4">
+              Snapshot date: {{ snapshotDate }} · {{ totalRepos }} repositories
+            </div>
+
           </v-col>
         </v-row>
       </v-container>
